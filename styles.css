@@ -1,9 +1,24 @@
 body {
     margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
 }
 
 #board-container {
     background-color: blue;
     height: 500px;
     width: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.board-tile {
+    background-color: red;
+    height: 32%;
+    width: 32%;
+    border: 2px solid black;
+
 }
