@@ -1,9 +1,12 @@
+// Kell egy uj board megoldas ahol oszlopok es sorok vannak, hogy egyszerubb legyen win condition
+//Pl. Connect four pelda a cikkbol
+
 const gameBoard = ( () => {
     let board = [];
 
     const createBoard =  () => {
         for(let i = 0; i < 9; i++){
-            board.push(null);
+            board.push(0);
         }
     }   
 
@@ -16,6 +19,18 @@ const gameBoard = ( () => {
     const updateBoard = (index, marker) => {
         board.splice(index, 1, marker);
         console.log(board);
+    }
+
+    const checkForWin = () => {
+        const boardStr = board.toString();
+
+        if(board.slice(0, 2).toString() === 'X,X,X' ||
+           board.slice(3, 5).toString() === 'X,X,X' ||
+           board.slice(6, 8).toString() === 'X,X,X' 
+    ){
+        gameController.callWinner(playerOne);
+    }
+
     }
 
     createBoard();
@@ -69,13 +84,15 @@ const gameController = (() =>{
         const userInputIndex = prompt(`${currentPlayer}'s turn enter index nr.`)
         return userInputIndex
     }
-    
+
     const playTurn = () => {
         gameBoard.updateBoard(getUserInputForIndex(), currentMarker);
         console.log(`nr. of turns ${turnCount}`);
         setPlayerTurn();
         updateTurnCount();
     }
+
+
 
     return {
         getUserInputForIndex, playTurn
