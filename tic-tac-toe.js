@@ -6,7 +6,7 @@ const gameBoard = ( () => {
 
     const createBoard =  () => {
         for(let i = 0; i < 9; i++){
-            board.push(0);
+            board.push(null);
         }
     }   
 
@@ -21,22 +21,18 @@ const gameBoard = ( () => {
         console.log(board);
     }
 
-    const checkForWin = () => {
-        const boardStr = board.toString();
-
-        if(board.slice(0, 2).toString() === 'X,X,X' ||
-           board.slice(3, 5).toString() === 'X,X,X' ||
-           board.slice(6, 8).toString() === 'X,X,X' 
-    ){
-        gameController.callWinner(playerOne);
+    const checkIfMarkerExist = (index) => {
+        return board[index];
     }
 
+    const checkForWin = () => {
+        const boardStr = board.toString();
     }
 
     createBoard();
 
     return {
-        resetBoard, updateBoard
+        resetBoard, updateBoard, checkIfMarkerExist, checkForWin
     }
 })();
 
@@ -68,11 +64,13 @@ const gameController = (() =>{
         turnCount++
     }
     const setPlayerTurn = () => {
+        
         //playerOne's turn
         if(turnCount%2 === 0){
             currentMarker = 'X';
             currentPlayer = playerOne.name;
         }
+
         //playerTwo's turn
         else {
             currentMarker = 'O';
@@ -81,13 +79,21 @@ const gameController = (() =>{
     }
 
     const getUserInputForIndex = () => {
-        const userInputIndex = prompt(`${currentPlayer}'s turn enter index nr.`)
-        return userInputIndex
+        let userInputIndex = prompt(`${currentPlayer}'s turn try a different index`);
+            
+            //Check if array already contains a marker
+            while (gameBoard.checkIfMarkerExist(userInputIndex) !== null) {
+                userInputIndex = prompt(`${currentPlayer}'s turn try a different index`);
+            } 
+        
+        return userInputIndex;
+
     }
 
     const playTurn = () => {
         gameBoard.updateBoard(getUserInputForIndex(), currentMarker);
         console.log(`nr. of turns ${turnCount}`);
+        //Check for winner goes here
         setPlayerTurn();
         updateTurnCount();
     }
@@ -99,7 +105,9 @@ const gameController = (() =>{
     }
 })();
 
+
 for(let i = 0; i < 5; i++) {
     gameController.playTurn();
+    gameBoard.checkForWin();
 }
 
