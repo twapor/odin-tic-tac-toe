@@ -1,6 +1,3 @@
-// Kell egy uj board megoldas ahol oszlopok es sorok vannak, hogy egyszerubb legyen win condition
-//Pl. Connect four pelda a cikkbol
-
 const gameBoard = ( () => {
     let board = [];
 
@@ -26,7 +23,27 @@ const gameBoard = ( () => {
     }
 
     const checkForWin = () => {
-        const boardStr = board.toString();
+        const winCombos = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+        for(let i = 0; i < winCombos.length-1; i++){
+            const [a, b, c] = winCombos[i];
+            if(board[a] != null && board[a] === board[b] && board[a] === board[c]){
+                gameController.callWinner();
+            }
+        }
+
+        //Check for tie
+        if(!board.includes(null)){
+            gameController.callTie();
+        }
     }
 
     createBoard();
@@ -39,18 +56,25 @@ const gameBoard = ( () => {
 //player factory
 const createPlayer = (name, marker) => {
     let score = 0;
+
     const winRound = () => {
         score++
     }
 
+    const getScore = () => {
+        return score
+    }
+
+    const resetScore = () => {
+        score = 0;
+    }
+
     return {
-        name, marker, winRound
+        name, marker, winRound, getScore, resetScore
     }
 }
 
-const gameController = (() =>{
-    let turnCount = 1;
-    let currentMarker = 'X';
+const gameController = (() => {
     
     //initiate players
     const playerOne = createPlayer(prompt(`Enter Player 1's name:`, 'PlayerOne'), 'X');
@@ -58,7 +82,12 @@ const gameController = (() =>{
     const playerTwo = createPlayer(prompt(`Enter Player 2's name:`, 'PlayerTwo'), 'O');
     alert(`${playerTwo.name}'s marker is "${playerTwo.marker}"`);
 
-    let currentPlayer = playerOne.name;
+
+    let turnCount = 1;
+    let currentMarker = playerOne.marker;
+    let currentPlayer = playerOne;
+    let currentPlayerName = playerOne.name;
+    let isRoundOver = false;
 
     const updateTurnCount = () => {
         turnCount++
@@ -68,22 +97,24 @@ const gameController = (() =>{
         //playerOne's turn
         if(turnCount%2 === 0){
             currentMarker = 'X';
-            currentPlayer = playerOne.name;
+            currentPlayer = playerOne;
+            currentPlayerName = playerOne.name;
         }
 
         //playerTwo's turn
         else {
             currentMarker = 'O';
-            currentPlayer = playerTwo.name;
+            currentPlayer = playerTwo;
+            currentPlayerName = playerTwo.name;
         }
     }
 
     const getUserInputForIndex = () => {
-        let userInputIndex = prompt(`${currentPlayer}'s turn try a different index`);
+        let userInputIndex = prompt(`${currentPlayerName}'s turn enter index`);
             
             //Check if array already contains a marker
             while (gameBoard.checkIfMarkerExist(userInputIndex) !== null) {
-                userInputIndex = prompt(`${currentPlayer}'s turn try a different index`);
+                userInputIndex = prompt(`${currentPlayerName}'s turn try a different index`);
             } 
         
         return userInputIndex;
@@ -92,22 +123,49 @@ const gameController = (() =>{
 
     const playTurn = () => {
         gameBoard.updateBoard(getUserInputForIndex(), currentMarker);
-        console.log(`nr. of turns ${turnCount}`);
-        //Check for winner goes here
-        setPlayerTurn();
-        updateTurnCount();
+        console.log(`turn nr.${turnCount}`);
+        gameBoard.checkForWin();
+        
+        if(isRoundOver) {
+            isRoundOver = false;
+            resetGame();
+        }
+        else {
+            setPlayerTurn();
+            updateTurnCount();
+        }
     }
 
+    const resetGame = () => {
+        gameBoard.resetBoard();
+        turnCount = 1;
+        currentPlayer = playerOne;
+        currentPlayerName = playerOne.name;
+        currentMarker = playerOne.marker;
+    }
 
+    const callWinner = () => {
+        currentPlayer.winRound();
+        isRoundOver = true;
+        alert(`${currentPlayerName} won the round!`);
+        alert(`${playerOne.name} has ${playerOne.getScore()} point while ${playerTwo.name} has ${playerTwo.getScore()} points `)
+    
+    }
+
+    const callTie = () => {
+        alert(`It's a tie!`);
+        isRoundOver = true;
+    }
+
+    const playGame = () => {
+        while(playerOne.getScore() < 3 && playerTwo.getScore() < 3){
+            playTurn();
+        }
+    }
 
     return {
-        getUserInputForIndex, playTurn
+        getUserInputForIndex, callWinner, callTie, playGame
     }
 })();
 
-
-for(let i = 0; i < 5; i++) {
-    gameController.playTurn();
-    gameBoard.checkForWin();
-}
-
+gameController.playGame();
