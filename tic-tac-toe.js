@@ -1,3 +1,5 @@
+const startBtn = document.querySelector('#start-btn');
+
 const gameBoard = ( () => {
     let board = [];
 
@@ -5,7 +7,12 @@ const gameBoard = ( () => {
         for(let i = 0; i < 9; i++){
             board.push(null);
         }
-    }   
+    }
+    
+    const readBoardArray = () => {
+        const displayBoard = board;
+        return displayBoard;
+    }
 
     const resetBoard = () => {
         for(let i = 0; i < board.length; i++){
@@ -19,10 +26,16 @@ const gameBoard = ( () => {
     }
 
     const checkIfMarkerExist = (index) => {
-        return board[index];
+        if(board[index] !== null){
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     const checkForWin = () => {
+        let isNotWon = true;
         const winCombos = [
             [0, 1, 2],
             [3, 4, 5],
@@ -33,15 +46,17 @@ const gameBoard = ( () => {
             [0, 4, 8],
             [2, 4, 6]
         ];
-        for(let i = 0; i < winCombos.length-1; i++){
+
+        for(let i = 0; i < winCombos.length; i++){
             const [a, b, c] = winCombos[i];
             if(board[a] != null && board[a] === board[b] && board[a] === board[c]){
+                isNotWon = false;
                 gameController.callWinner();
             }
         }
 
         //Check for tie
-        if(!board.includes(null)){
+        if(!board.includes(null) && isNotWon){
             gameController.callTie();
         }
     }
@@ -49,7 +64,7 @@ const gameBoard = ( () => {
     createBoard();
 
     return {
-        resetBoard, updateBoard, checkIfMarkerExist, checkForWin
+        resetBoard, readBoardArray, updateBoard, checkIfMarkerExist, checkForWin
     }
 })();
 
@@ -77,11 +92,10 @@ const createPlayer = (name, marker) => {
 const gameController = (() => {
     
     //initiate players
-    const playerOne = createPlayer(prompt(`Enter Player 1's name:`, 'PlayerOne'), 'X');
+    let playerOne = createPlayer(prompt(`Enter Player 1's name:`, 'PlayerOne'), 'X');
     alert(`${playerOne.name}'s marker is "${playerOne.marker}"`);
-    const playerTwo = createPlayer(prompt(`Enter Player 2's name:`, 'PlayerTwo'), 'O');
+    let playerTwo = createPlayer(prompt(`Enter Player 2's name:`, 'PlayerTwo'), 'O');
     alert(`${playerTwo.name}'s marker is "${playerTwo.marker}"`);
-
 
     let turnCount = 1;
     let currentMarker = playerOne.marker;
@@ -109,32 +123,34 @@ const gameController = (() => {
         }
     }
 
-    const getUserInputForIndex = () => {
-        let userInputIndex = prompt(`${currentPlayerName}'s turn enter index`);
-            
-            //Check if array already contains a marker
-            while (gameBoard.checkIfMarkerExist(userInputIndex) !== null) {
-                userInputIndex = prompt(`${currentPlayerName}'s turn try a different index`);
-            } 
-        
-        return userInputIndex;
-
-    }
-
-    const playTurn = () => {
-        gameBoard.updateBoard(getUserInputForIndex(), currentMarker);
-        console.log(`turn nr.${turnCount}`);
-        gameBoard.checkForWin();
-        
-        if(isRoundOver) {
-            isRoundOver = false;
-            resetGame();
+    const playTurn = (e) => {
+        if(gameBoard.checkIfMarkerExist(e)){
+            alert(`It's already taken!`);
         }
         else {
-            setPlayerTurn();
-            updateTurnCount();
+            gameBoard.updateBoard(e, currentMarker);
+            console.log(`turn nr.${turnCount}`);
+            gameBoard.checkForWin();
+
+
+            if(playerOne.getScore() > 2 || playerTwo.getScore() > 2){
+                endGame(currentPlayer);
+            }
+
+            else{
+            
+                if(isRoundOver) {
+                    isRoundOver = false;
+                    resetGame();
+                    
+                }
+                else {
+                    setPlayerTurn();
+                    updateTurnCount();
+                }
+            }
         }
-    }
+        }
 
     const resetGame = () => {
         gameBoard.resetBoard();
@@ -157,15 +173,98 @@ const gameController = (() => {
         isRoundOver = true;
     }
 
-    const playGame = () => {
-        while(playerOne.getScore() < 3 && playerTwo.getScore() < 3){
-            playTurn();
-        }
+    const playGame = (e) => {
+        playTurn(e);
+        displayController.updateDisplayBoard();
+        updateScoreBoard();
+        updateCurrentPlayerDisplay();
+        displayController.updateDisplayBoard();
+
     }
 
+    const endGame = (winner) => {
+        alert(`${winner.name} won the Game`);
+        const body = document.querySelector('body');
+        const restart = document.createElement('button');
+        const message = document.createElement('p');
+        message.id = 'final-msg';
+        message.textContent = `${currentPlayerName} won the game!`;
+        restart.id = 'restart';
+        restart.textContent = 'Restart';
+        const overlay = document.createElement('div');
+        overlay.id = 'overlay';
+        restart.addEventListener('click', () => {
+            resetGame();
+            playerOne.resetScore();
+            playerTwo.resetScore();
+            overlay.remove();
+            message.remove();
+            restart.remove();
+        });
+        body.appendChild(overlay);
+        overlay.appendChild(message);
+        overlay.appendChild(restart);
+    }
+
+    const updateScoreBoard = () => {
+        const scoreBoard = document.querySelector('#score');
+        scoreBoard.textContent = `${playerOne.name}: ${playerOne.getScore()} - ${playerTwo.name}: ${playerTwo.getScore()}`;
+    }
+
+    updateScoreBoard();
+
+    const updateCurrentPlayerDisplay = () => {
+        const currentPlayerDisplay = document.querySelector('#current-player');
+        currentPlayerDisplay.textContent = `${currentPlayerName}'s turn`
+    }
+
+    updateCurrentPlayerDisplay();
+
     return {
-        getUserInputForIndex, callWinner, callTie, playGame
+        callWinner, callTie, playGame, playTurn
     }
 })();
 
-gameController.playGame();
+const displayController = (() => {
+
+    const boardContainer = document.querySelector('#board-container');
+
+    const drawBoard = () => {
+        console.log(`I'm drawing tiles!`)
+        const displayBoard = gameBoard.readBoardArray();
+        for(let i=0; i < displayBoard.length; i++){
+            const boardTile = document.createElement('div');
+            boardTile.classList.add('board-tile');
+            boardTile.textContent = displayBoard[i];
+            boardTile.id = i;
+            boardTile.addEventListener('click', (e) => {
+                console.log(e.target.id);
+                gameController.playGame(e.target.id);
+            });
+            boardContainer.appendChild(boardTile);
+            
+        }
+    }
+
+    const removeAllChildNodes = (parent) => {
+        console.log(`I'm removing tiles!`)
+        while(parent.firstChild) {
+            parent.removeChild(parent.firstChild);
+        }
+    }
+
+    const updateDisplayBoard = () => {
+        console.log(`I'm running!`);
+        removeAllChildNodes(boardContainer);
+        drawBoard();
+    }
+
+    
+
+    return {
+        updateDisplayBoard
+    }
+})();
+
+displayController.updateDisplayBoard();
+
